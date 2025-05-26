@@ -1,32 +1,18 @@
+// src/main/java/com/example/dostemlakprojesi/Main.java
 package com.example.dostemlakprojesi;
 
-import javafx.application.Application;
-import javafx.fxml.FXMLLoader;
-import javafx.scene.Parent;
-import javafx.scene.Scene;
-import javafx.stage.Stage;
-import jfxtras.styles.jmetro.JMetro;
-import jfxtras.styles.jmetro.Style;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-public class Main extends Application {
-    @Override
-    public void start(Stage primaryStage) {
-        try {
-            Parent root = FXMLLoader.load(getClass().getResource("/com/example/dostemlakprojesi/login.fxml"));
-            Scene scene = new Scene(root);
-
-            JMetro jMetro=new JMetro(Style.LIGHT);
-            jMetro.setScene(scene);
-
-            primaryStage.setTitle("Giriş Ekranı");
-            primaryStage.setScene(scene);
-            primaryStage.show();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
+@SpringBootApplication
+public class Main {
     public static void main(String[] args) {
-        launch(args);
+        // Eski JavaFX kodunu kaldırdık, Spring Boot başlatıyoruz
+        SpringApplication.run(Main.class, args);
+        
+        System.out.println("🚀 DOSTemlak Backend Server başlatıldı!");
+        System.out.println("📍 API: http://localhost:8080/api");
+        System.out.println("📊 H2 Console: http://localhost:8080/h2-console");
+        System.out.println("🎯 Test endpoint: http://localhost:8080/api/listings");
     }
 }
