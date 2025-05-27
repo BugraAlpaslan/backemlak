@@ -1,7 +1,8 @@
-// src/main/java/com/example/dostemlakprojesi/Ilan.java
+// src/main/java/com/example/dostemlakprojesi/Ilan.java - JSON serialization düzeltmesi
 package com.example.dostemlakprojesi;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.ArrayList;
@@ -13,6 +14,7 @@ public class Ilan {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public int ilanID;
+     private static int nextId = 1; // Static counter
     
     public int fiyat;
     public int m2;
@@ -50,15 +52,19 @@ public class Ilan {
     public List<String> features;
     
     // İlişkiler - mevcut FotoNode yapınızı koruduk
+    // ⭐ JSON serialization'dan hariç tut - circular reference önlemek için
     @Transient
+    @JsonIgnore
     public FotoNode fotoHead; // Mevcut foto linkedlist yapınız
     
     @Transient
+    @JsonIgnore
     public Ilan next; // Mevcut linkedlist yapınız
     
-    // JPA için owner ilişkisi
+    // JPA için owner ilişkisi - JSON'da gösterme
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
+    @JsonIgnore
     public KullaniciNode owner;
     
     // Timestamps
@@ -68,8 +74,9 @@ public class Ilan {
     public Integer viewCount = 0;
     
     // Constructors - Mevcut constructor'ınızı koruyoruz
-    public Ilan(int fiyat, int m2, int binaYasi, int odaSayisi, String kimden, 
+        public Ilan(int fiyat, int m2, int binaYasi, int odaSayisi, String kimden, 
                 String ismi, String aciklama, String konum) {
+        this.ilanID = nextId++; // ⭐ Manuel ID ata
         this.fiyat = fiyat;
         this.m2 = m2;
         this.binaYasi = binaYasi;
@@ -82,13 +89,17 @@ public class Ilan {
         this.fotoHead = null;
         this.next = null;
         this.features = new ArrayList<>();
+        
+        System.out.println("🆔 Yeni ilan ID atandı: " + this.ilanID + " - " + ismi);
     }
     
     public Ilan() {
+        this.ilanID = nextId++; // ⭐ Default constructor için de
         this.createdAt = LocalDateTime.now();
         this.features = new ArrayList<>();
+        
+        System.out.println("🆔 Boş ilan ID atandı: " + this.ilanID);
     }
-    
     // Mevcut fotoEkle metodunuzu koruyoruz
     public void fotoEkle(String fotoPath) {
         FotoNode yeni = new FotoNode(fotoPath);
@@ -124,19 +135,19 @@ public class Ilan {
         }
     }
 
-    // React için fotoları liste olarak al
-    public List<FotoNode> getFotoList() {
-        List<FotoNode> fotoList = new ArrayList<>();
+    // React için fotoları liste olarak al - JSON safe
+    public List<String> getImageUrls() {
+        List<String> imageUrls = new ArrayList<>();
         
         if (fotoHead != null) {
             FotoNode current = fotoHead;
             do {
-                fotoList.add(current);
+                imageUrls.add(current.getUrl());
                 current = current.next;
-            } while (current != fotoHead);
+            } while (current != fotoHead && current != null);
         }
         
-        return fotoList;
+        return imageUrls;
     }
 
     // İlk resmin URL'ini al (React carousel için)

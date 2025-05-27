@@ -2,6 +2,7 @@
 package com.example.dostemlakprojesi;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "listing_images")
@@ -27,15 +28,19 @@ public class FotoNode {
     public String contentType;      // image/jpeg, image/png vs.
     
     // LinkedList yapısı (mevcut sisteminizi koruyoruz)
+    // ⭐ JSON serialization'dan hariç tut - circular reference sorunu
     @Transient
+    @JsonIgnore
     public FotoNode next;
     
     @Transient  
+    @JsonIgnore
     public FotoNode prev;
     
-    // JPA ilişkisi
+    // JPA ilişkisi - JSON'da gösterme (circular reference)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "ilan_id")
+    @JsonIgnore
     public Ilan ilan;
     
     // Constructors
@@ -110,6 +115,7 @@ public class FotoNode {
     public String getContentType() { return contentType; }
     public void setContentType(String contentType) { this.contentType = contentType; }
     
+    // İlan ilişkisi getter/setter (JSON'da gösterilmez)
     public Ilan getIlan() { return ilan; }
     public void setIlan(Ilan ilan) { this.ilan = ilan; }
 }
