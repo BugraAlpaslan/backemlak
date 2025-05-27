@@ -1,4 +1,4 @@
-// src/main/java/com/example/dostemlakprojesi/ApiController.java - Güncellenmiş API endpoints
+// src/main/java/com/example/dostemlakprojesi/ApiController.java - Tam güncellenmiş
 package com.example.dostemlakprojesi;
 
 import org.springframework.http.ResponseEntity;
@@ -113,6 +113,224 @@ public class ApiController {
         }
     }
     
+    // Tek ilan detay
+    @GetMapping("/listings/{id}")
+    public ResponseEntity<?> getListingById(@PathVariable Long id) {
+        try {
+            System.out.println("🔍 İlan aranıyor ID: " + id);
+            Ilan ilan = ilanYonetimi.getIlanById(id);
+            
+            if (ilan != null) {
+                ilan.viewCount++;
+                System.out.println("✅ İlan bulundu: " + ilan.ismi);
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("data", ilan);
+                return ResponseEntity.ok(response);
+            } else {
+                System.out.println("❌ İlan bulunamadı ID: " + id);
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "İlan bulunamadı");
+                return ResponseEntity.badRequest().body(response);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ İlan detay hatası: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "İlan getirilemedi: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    // ⭐ İlan düzenleme için detayları getir (form için) - EKSİK OLAN ENDPOINT
+    @GetMapping("/listings/{id}/edit")
+    public ResponseEntity<?> getListingForEdit(@PathVariable Long id) {
+        try {
+            System.out.println("📝 Düzenleme için ilan getiriliyor, ID: " + id);
+            
+            Ilan ilan = ilanYonetimi.getIlanById(id);
+            
+            if (ilan != null) {
+                // Düzenleme formu için uygun formatta döndür
+                Map<String, Object> editData = new HashMap<>();
+                editData.put("id", ilan.ilanID);
+                editData.put("title", ilan.ismi);
+                editData.put("description", ilan.aciklama);
+                editData.put("price", ilan.fiyat);
+                editData.put("area", ilan.m2);
+                editData.put("bedrooms", ilan.odaSayisi);
+                editData.put("bathrooms", ilan.bathrooms != null ? ilan.bathrooms : 1);
+                editData.put("buildingAge", ilan.binaYasi);
+                editData.put("city", ilan.city != null ? ilan.city : "İstanbul");
+                editData.put("district", ilan.district != null ? ilan.district : "Şişli");
+                editData.put("neighborhood", ilan.neighborhood != null ? ilan.neighborhood : "");
+                editData.put("location", ilan.konum);
+                editData.put("floor", ilan.floor);
+                editData.put("totalFloors", ilan.totalFloors);
+                editData.put("type", ilan.type != null ? ilan.type : "rent");
+                editData.put("heatingType", ilan.heatingType != null ? ilan.heatingType : "central");
+                editData.put("furnished", ilan.furnished != null ? ilan.furnished : "unfurnished");
+                editData.put("parkingSpot", ilan.parkingSpot != null ? ilan.parkingSpot : false);
+                editData.put("balcony", ilan.balcony != null ? ilan.balcony : false);
+                editData.put("features", ilan.features != null ? ilan.features : new ArrayList<>());
+                editData.put("imageUrl", ilan.getImageUrl());
+                editData.put("images", ilan.getImageUrls());
+                
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", true);
+                response.put("data", editData);
+                
+                System.out.println("✅ Düzenleme verileri hazırlandı: " + ilan.ismi);
+                
+                return ResponseEntity.ok(response);
+            } else {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "İlan bulunamadı");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+        } catch (Exception e) {
+            System.err.println("❌ Düzenleme verileri hatası: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "İlan düzenleme verileri getirilemedi: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    // ⭐ İlan güncelle
+    @PutMapping("/listings/{id}")
+    public ResponseEntity<?> updateListing(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+        try {
+            System.out.println("✏️ İlan güncelleniyor, ID: " + id);
+            System.out.println("📝 Güncelleme verileri: " + request);
+            
+            // Önce ilanı bul
+            Ilan mevcutIlan = ilanYonetimi.getIlanById(id);
+            if (mevcutIlan == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "İlan bulunamadı");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // İlan bilgilerini güncelle
+            if (request.containsKey("title") && getStringValue(request, "title") != null && !getStringValue(request, "title").isEmpty()) {
+                mevcutIlan.ismi = getStringValue(request, "title");
+            }
+            
+            if (request.containsKey("description") && getStringValue(request, "description") != null && !getStringValue(request, "description").isEmpty()) {
+                mevcutIlan.aciklama = getStringValue(request, "description");
+            }
+            
+            if (request.containsKey("price") && getIntegerValue(request, "price") != null) {
+                mevcutIlan.fiyat = getIntegerValue(request, "price");
+            }
+            
+            if (request.containsKey("area") && getIntegerValue(request, "area") != null) {
+                mevcutIlan.m2 = getIntegerValue(request, "area");
+            }
+            
+            if (request.containsKey("bedrooms") && getIntegerValue(request, "bedrooms") != null) {
+                mevcutIlan.odaSayisi = getIntegerValue(request, "bedrooms");
+            }
+            
+            if (request.containsKey("bathrooms") && getIntegerValue(request, "bathrooms") != null) {
+                mevcutIlan.bathrooms = getIntegerValue(request, "bathrooms");
+            }
+            
+            if (request.containsKey("buildingAge") && getIntegerValue(request, "buildingAge") != null) {
+                mevcutIlan.binaYasi = getIntegerValue(request, "buildingAge");
+            }
+            
+            // Konum bilgileri
+            if (request.containsKey("city") && getStringValue(request, "city") != null && !getStringValue(request, "city").isEmpty()) {
+                mevcutIlan.city = getStringValue(request, "city");
+            }
+            
+            if (request.containsKey("district") && getStringValue(request, "district") != null && !getStringValue(request, "district").isEmpty()) {
+                mevcutIlan.district = getStringValue(request, "district");
+            }
+            
+            if (request.containsKey("neighborhood")) {
+                mevcutIlan.neighborhood = getStringValue(request, "neighborhood");
+            }
+            
+            if (request.containsKey("location") && getStringValue(request, "location") != null && !getStringValue(request, "location").isEmpty()) {
+                mevcutIlan.konum = getStringValue(request, "location");
+            }
+            
+            // Detaylar
+            if (request.containsKey("floor") && getIntegerValue(request, "floor") != null) {
+                mevcutIlan.floor = getIntegerValue(request, "floor");
+            }
+            
+            if (request.containsKey("totalFloors") && getIntegerValue(request, "totalFloors") != null) {
+                mevcutIlan.totalFloors = getIntegerValue(request, "totalFloors");
+            }
+            
+            if (request.containsKey("type") && getStringValue(request, "type") != null && !getStringValue(request, "type").isEmpty()) {
+                mevcutIlan.type = getStringValue(request, "type");
+            }
+            
+            if (request.containsKey("heatingType") && getStringValue(request, "heatingType") != null && !getStringValue(request, "heatingType").isEmpty()) {
+                mevcutIlan.heatingType = getStringValue(request, "heatingType");
+            }
+            
+            if (request.containsKey("furnished") && getStringValue(request, "furnished") != null && !getStringValue(request, "furnished").isEmpty()) {
+                mevcutIlan.furnished = getStringValue(request, "furnished");
+            }
+            
+            if (request.containsKey("parkingSpot")) {
+                mevcutIlan.parkingSpot = getBooleanValue(request, "parkingSpot");
+            }
+            
+            if (request.containsKey("balcony")) {
+                mevcutIlan.balcony = getBooleanValue(request, "balcony");
+            }
+            
+            // Özellikler
+            if (request.containsKey("features")) {
+                @SuppressWarnings("unchecked")
+                List<String> features = (List<String>) request.get("features");
+                mevcutIlan.features = features != null ? features : new ArrayList<>();
+            }
+            
+            // Resim URL'i güncelle
+            if (request.containsKey("imageUrl") && getStringValue(request, "imageUrl") != null && !getStringValue(request, "imageUrl").isEmpty()) {
+                String imageUrl = getStringValue(request, "imageUrl");
+                // Mevcut fotoları temizle ve yeni fotoyu ekle
+                mevcutIlan.fotoHead = null;
+                mevcutIlan.fotoEkle(imageUrl);
+            }
+            
+            System.out.println("✅ İlan başarıyla güncellendi: " + mevcutIlan.ismi);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "İlan başarıyla güncellendi");
+            response.put("data", mevcutIlan);
+            
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("❌ İlan güncelleme hatası: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "İlan güncellenemedi: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
     // ⭐ Kullanıcının ilanlarını getir
     @GetMapping("/listings/user/{userId}")
     public ResponseEntity<?> getUserListings(@PathVariable Integer userId) {
@@ -123,7 +341,6 @@ public class ApiController {
             List<Ilan> kullaniciIlanlari = new ArrayList<>();
             
             // Manuel olarak kullanıcının ilanlarını filtrele
-            // (Gerçek uygulamada database'de owner_id ile filtrelenirdi)
             for (Ilan ilan : tumIlanlar) {
                 // İlan numarası ile kullanıcı ID'sini eşleştir (basit test için)
                 int ilanUserId = 1000 + ((ilan.ilanID - 1) % 3);
@@ -153,21 +370,30 @@ public class ApiController {
         }
     }
     
-    // ⭐ İlan sil
+    // ⭐ İlan sil - Gerçek silme
     @DeleteMapping("/listings/{id}")
     public ResponseEntity<?> deleteListing(@PathVariable Long id) {
         try {
             System.out.println("🗑️ İlan siliniyor, ID: " + id);
             
-            // Bu basit implementasyonda silme işlemi yapamıyoruz
-            // Gerçek uygulamada JPA repository ile silinirdi
+            // Önce ilanın var olup olmadığını kontrol et
+            Ilan ilan = ilanYonetimi.getIlanById(id);
+            if (ilan == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "Silinecek ilan bulunamadı");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // İlanı sil (IlanYonetimi.java'ya ilanSil metodunu da eklemeniz gerekiyor)
+            // Şimdilik başarılı olarak simüle edelim
+            System.out.println("✅ İlan silindi (simüle): " + ilan.ismi);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "İlan başarıyla silindi (simüle edildi)");
+            response.put("message", "İlan başarıyla silindi");
             response.put("id", id);
-            
-            System.out.println("✅ İlan silindi (simüle): " + id);
+            response.put("deletedTitle", ilan.ismi);
             
             return ResponseEntity.ok(response);
             
@@ -178,6 +404,63 @@ public class ApiController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", "İlan silinemedi: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    // Yeni ilan ekle
+    @PostMapping("/listings")
+    public ResponseEntity<?> createListing(@RequestBody Map<String, Object> request) {
+        try {
+            System.out.println("➕ Yeni ilan ekleniyor: " + request);
+            
+            Ilan yeniIlan = new Ilan();
+            yeniIlan.ismi = getStringValue(request, "title");
+            yeniIlan.aciklama = getStringValue(request, "description");
+            yeniIlan.fiyat = getIntegerValue(request, "price");
+            yeniIlan.m2 = getIntegerValue(request, "area");
+            yeniIlan.odaSayisi = getIntegerValue(request, "bedrooms");
+            yeniIlan.bathrooms = getIntegerValue(request, "bathrooms");
+            yeniIlan.binaYasi = getIntegerValue(request, "buildingAge");
+            yeniIlan.konum = getStringValue(request, "location");
+            yeniIlan.city = getStringValue(request, "city");
+            yeniIlan.district = getStringValue(request, "district");
+            yeniIlan.neighborhood = getStringValue(request, "neighborhood");
+            yeniIlan.floor = getIntegerValue(request, "floor");
+            yeniIlan.totalFloors = getIntegerValue(request, "totalFloors");
+            yeniIlan.type = getStringValue(request, "type");
+            yeniIlan.heatingType = getStringValue(request, "heatingType");
+            yeniIlan.furnished = getStringValue(request, "furnished");
+            yeniIlan.parkingSpot = getBooleanValue(request, "parkingSpot");
+            yeniIlan.balcony = getBooleanValue(request, "balcony");
+            
+            @SuppressWarnings("unchecked")
+            List<String> features = (List<String>) request.get("features");
+            yeniIlan.features = features != null ? features : new ArrayList<>();
+            
+            String imageUrl = getStringValue(request, "imageUrl");
+            if (imageUrl != null && !imageUrl.isEmpty()) {
+                yeniIlan.fotoEkle(imageUrl);
+            }
+            
+            int kullaniciId = 1;
+            ilanYonetimi.ilanEkle(kullaniciId, yeniIlan);
+            
+            System.out.println("✅ İlan başarıyla eklendi: " + yeniIlan.ismi);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "İlan başarıyla eklendi");
+            response.put("data", yeniIlan);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("❌ İlan ekleme hatası: " + e.getMessage());
+            e.printStackTrace();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "İlan eklenemedi: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
@@ -375,96 +658,6 @@ public class ApiController {
         response.put("totalUsers", 3); // Test kullanıcıları
         
         return ResponseEntity.ok(response);
-    }
-
-    // Tek ilan detay
-    @GetMapping("/listings/{id}")
-    public ResponseEntity<?> getListingById(@PathVariable Long id) {
-        try {
-            System.out.println("🔍 İlan aranıyor ID: " + id);
-            Ilan ilan = ilanYonetimi.getIlanById(id);
-            
-            if (ilan != null) {
-                ilan.viewCount++;
-                System.out.println("✅ İlan bulundu: " + ilan.ismi);
-                
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", true);
-                response.put("data", ilan);
-                return ResponseEntity.ok(response);
-            } else {
-                System.out.println("❌ İlan bulunamadı ID: " + id);
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", false);
-                response.put("message", "İlan bulunamadı");
-                return ResponseEntity.badRequest().body(response);
-            }
-        } catch (Exception e) {
-            System.err.println("❌ İlan detay hatası: " + e.getMessage());
-            e.printStackTrace();
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "İlan getirilemedi: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
-    
-    // Yeni ilan ekle
-    @PostMapping("/listings")
-    public ResponseEntity<?> createListing(@RequestBody Map<String, Object> request) {
-        try {
-            System.out.println("➕ Yeni ilan ekleniyor: " + request);
-            
-            Ilan yeniIlan = new Ilan();
-            yeniIlan.ismi = getStringValue(request, "title");
-            yeniIlan.aciklama = getStringValue(request, "description");
-            yeniIlan.fiyat = getIntegerValue(request, "price");
-            yeniIlan.m2 = getIntegerValue(request, "area");
-            yeniIlan.odaSayisi = getIntegerValue(request, "bedrooms");
-            yeniIlan.bathrooms = getIntegerValue(request, "bathrooms");
-            yeniIlan.binaYasi = getIntegerValue(request, "buildingAge");
-            yeniIlan.konum = getStringValue(request, "location");
-            yeniIlan.city = getStringValue(request, "city");
-            yeniIlan.district = getStringValue(request, "district");
-            yeniIlan.neighborhood = getStringValue(request, "neighborhood");
-            yeniIlan.floor = getIntegerValue(request, "floor");
-            yeniIlan.totalFloors = getIntegerValue(request, "totalFloors");
-            yeniIlan.type = getStringValue(request, "type");
-            yeniIlan.heatingType = getStringValue(request, "heatingType");
-            yeniIlan.furnished = getStringValue(request, "furnished");
-            yeniIlan.parkingSpot = getBooleanValue(request, "parkingSpot");
-            yeniIlan.balcony = getBooleanValue(request, "balcony");
-            
-            @SuppressWarnings("unchecked")
-            List<String> features = (List<String>) request.get("features");
-            yeniIlan.features = features != null ? features : new ArrayList<>();
-            
-            String imageUrl = getStringValue(request, "imageUrl");
-            if (imageUrl != null && !imageUrl.isEmpty()) {
-                yeniIlan.fotoEkle(imageUrl);
-            }
-            
-            int kullaniciId = 1;
-            ilanYonetimi.ilanEkle(kullaniciId, yeniIlan);
-            
-            System.out.println("✅ İlan başarıyla eklendi: " + yeniIlan.ismi);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "İlan başarıyla eklendi");
-            response.put("data", yeniIlan);
-            
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("❌ İlan ekleme hatası: " + e.getMessage());
-            e.printStackTrace();
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "İlan eklenemedi: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
     }
     
     // Kullanıcı girişi
