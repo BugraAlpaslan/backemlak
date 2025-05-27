@@ -155,4 +155,56 @@ public Ilan getIlanById(Long id) {
         }
         return new ArrayList<>();
     }
+    // IlanYonetimi.java'ya eklenecek metod
+
+// ⭐ İlan sil - HashMap'ten gerçek silme
+public boolean ilanSil(Long id) {
+    System.out.println("🗑️ İlan siliniyor, ID: " + id);
+    
+    // JPA ile dene
+    if (ilanRepository != null) {
+        try {
+            if (ilanRepository.existsById(id)) {
+                ilanRepository.deleteById(id);
+                System.out.println("✅ JPA'dan silindi: " + id);
+            }
+        } catch (Exception e) {
+            System.out.println("❌ JPA silme hatası: " + e.getMessage());
+        }
+    }
+    
+    // HashMap'ten de sil
+    boolean bulundu = false;
+    for (int kullaniciId : ilanHash.keySet()) {
+        IlanLinkedList ilanListesi = ilanHash.get(kullaniciId);
+        
+        // İlk node mu silinecek?
+        if (ilanListesi.head != null && ilanListesi.head.ilan.ilanID == id.intValue()) {
+            ilanListesi.head = ilanListesi.head.next;
+            bulundu = true;
+            System.out.println("✅ HashMap başından silindi: " + id);
+            break;
+        }
+        
+        // Ortadaki veya sondaki node'u bul ve sil
+        IlanNode current = ilanListesi.head;
+        while (current != null && current.next != null) {
+            if (current.next.ilan.ilanID == id.intValue()) {
+                current.next = current.next.next; // Node'u atla (sil)
+                bulundu = true;
+                System.out.println("✅ HashMap ortasından silindi: " + id);
+                break;
+            }
+            current = current.next;
+        }
+        
+        if (bulundu) break;
+    }
+    
+    if (!bulundu) {
+        System.out.println("❌ Silinecek ilan bulunamadı: " + id);
+    }
+    
+    return bulundu;
+}
 }
