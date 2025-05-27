@@ -86,16 +86,53 @@ public class IlanYonetimi {
         return allIlanlar;
     }
     
-    public Ilan getIlanById(Long id) {
-        if (ilanRepository != null) {
-            try {
-                return ilanRepository.findById(id).orElse(null);
-            } catch (Exception e) {
-                System.out.println("JPA okuma hatası: " + e.getMessage());
+    // IlanYonetimi.java - getIlanById metodunu düzelt
+
+public Ilan getIlanById(Long id) {
+    System.out.println("🔍 İlan aranıyor ID: " + id);
+    
+    // JPA Repository ile dene
+    if (ilanRepository != null) {
+        try {
+            Ilan ilan = ilanRepository.findById(id).orElse(null);
+            if (ilan != null) {
+                System.out.println("✅ JPA'dan bulundu: " + ilan.ismi);
+                return ilan;
             }
+            System.out.println("⚠️ JPA'da bulunamadı, HashMap'e bakılıyor...");
+        } catch (Exception e) {
+            System.out.println("❌ JPA hatası: " + e.getMessage());
         }
-        return null;
     }
+    
+    // Fallback: HashMap'ten ara
+    System.out.println("🔍 HashMap'te aranıyor...");
+    for (IlanLinkedList list : ilanHash.values()) {
+        IlanNode current = list.head;
+        while (current != null) {
+            // ID matching - hem int hem Long için
+            if (current.ilan.ilanID == id.intValue()) {
+                System.out.println("✅ HashMap'te bulundu: " + current.ilan.ismi);
+                return current.ilan;
+            }
+            current = current.next;
+        }
+    }
+    
+    System.out.println("❌ İlan hiçbir yerde bulunamadı ID: " + id);
+    
+    // Debug: Mevcut ilanları listele
+    System.out.println("📋 Mevcut ilanlar:");
+    for (IlanLinkedList list : ilanHash.values()) {
+        IlanNode current = list.head;
+        while (current != null) {
+            System.out.println("   ID: " + current.ilan.ilanID + " - " + current.ilan.ismi);
+            current = current.next;
+        }
+    }
+    
+    return null;
+}
     
     public Page<Ilan> getIlanlarWithPaging(Pageable pageable) {
         if (ilanRepository != null) {

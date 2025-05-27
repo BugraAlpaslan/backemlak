@@ -60,11 +60,6 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
         
-        <!-- Security (Authentication için) -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
         
         <!-- JWT Dependencies (Token tabanlı authentication) -->
         <dependency>
